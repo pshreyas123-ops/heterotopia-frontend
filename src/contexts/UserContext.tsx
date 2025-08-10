@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type UserRole = "ngo" | "funder" | "consultant";
+export type UserRole = "ngo";
 
 export interface User {
   id: string;
@@ -24,31 +24,61 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Simulate loading user data from API/localStorage
-    // In a real app, this would fetch from your authentication system
+    // Mark as hydrated to prevent SSR/client mismatch
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    // Only load user data after hydration
+    if (!isHydrated) return;
+
     const loadUser = async () => {
       try {
-        // Only access localStorage on the client side to avoid hydration mismatch
-        if (typeof window !== "undefined") {
-          // Check localStorage for user data
-          const savedUser = localStorage.getItem("heterotopia_user");
-          if (savedUser) {
-            setUser(JSON.parse(savedUser));
-          } else {
-            // Mock user data for development - you can change the role here
-            const mockUser: User = {
-              id: "1",
-              name: "Sarah Johnson",
-              email: "sarah@example.com",
-              role: "funder", // Change this to "ngo" or "consultant" to test different roles
-              organization: "Impact Foundation",
-              profileComplete: 85,
-            };
-            setUser(mockUser);
-            localStorage.setItem("heterotopia_user", JSON.stringify(mockUser));
+        // Check localStorage for user data
+        const savedUser = localStorage.getItem("heterotopia_user");
+        let parsedUser = null;
+
+        if (savedUser) {
+          try {
+            parsedUser = JSON.parse(savedUser);
+            // Clear old data if it has invalid role (funder/consultant)
+            if (parsedUser.role !== "ngo") {
+              localStorage.removeItem("heterotopia_user");
+              parsedUser = null;
+            }
+          } catch (e) {
+            // Clear corrupted data
+            localStorage.removeItem("heterotopia_user");
+            parsedUser = null;
           }
+        }
+
+        if (parsedUser) {
+          setUser(parsedUser);
+        } else {
+          // Check if user is coming from Google OAuth or needs onboarding
+          const isNewUser = !localStorage.getItem("onboarding_completed") && !localStorage.getItem("onboarding_skipped");
+
+          if (isNewUser) {
+            // New user - redirect to onboarding
+            window.location.href = "/onboarding";
+            return;
+          }
+
+          // Mock NGO user data for development
+          const mockUser: User = {
+            id: "1",
+            name: "John Doe",
+            email: "john@globalhealthinitiative.org",
+            role: "ngo",
+            organization: "Global Health Initiative",
+            profileComplete: 75,
+          };
+          setUser(mockUser);
+          localStorage.setItem("heterotopia_user", JSON.stringify(mockUser));
         }
       } catch (error) {
         console.error("Error loading user:", error);
@@ -58,12 +88,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     };
 
     loadUser();
-  }, []);
+  }, [isHydrated]);
 
   const updateUser = (newUser: User | null) => {
     setUser(newUser);
-    // Only access localStorage on the client side
-    if (typeof window !== "undefined") {
+    // Only access localStorage after hydration
+    if (isHydrated) {
       if (newUser) {
         localStorage.setItem("heterotopia_user", JSON.stringify(newUser));
       } else {

@@ -111,10 +111,7 @@ export default function FunderDetailPage({ params }: { params: { id: string } })
         
         <div className="flex space-x-3">
           <Button variant="outline">
-            Save Funder
-          </Button>
-          <Button>
-            Contact Funder
+            Save for Reference
           </Button>
         </div>
       </div>
@@ -309,9 +306,11 @@ export default function FunderDetailPage({ params }: { params: { id: string } })
               </div>
               
               <div className="pt-4 border-t">
-                <Button className="w-full">
-                  Send Message
-                </Button>
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Contact information provided for reference only
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

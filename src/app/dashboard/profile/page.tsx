@@ -1,91 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { t } from "@/lib/i18n";
+import ClientOnly from "@/components/ClientOnly";
 
-// Mock data - in real app this would come from API
+// Comprehensive profile for MVP with storytelling elements
 const mockProfile = {
+  // Basic Information
   organizationName: "Global Health Initiative",
   email: "john@globalhealthinitiative.org",
-  userType: "ngo" as const,
+  phone: "+254-700-123456",
+  website: "www.globalhealthinitiative.org",
+  establishedYear: "2016",
+  organizationType: "International NGO",
+  registrationNumber: "NGO/REG/2016/001",
+  
+  // Mission & Focus
   mission: "To improve global health outcomes through innovative programs and partnerships in underserved communities.",
-  description: "We are a non-profit organization focused on delivering healthcare solutions to remote and underserved areas. Our work spans across preventive care, health education, and capacity building for local healthcare systems.",
+  description: "We work directly with local communities to provide healthcare access, train health workers, and implement sustainable health solutions.",
+  impactStory: "In 2016, we started with a simple mission: ensure no one dies from preventable diseases. Today, we've transformed healthcare access for over 50,000 people across rural Africa and Southeast Asia through mobile clinics, community health worker training, and innovative health solutions.",
   sectors: ["Health", "Education"],
-  sdgGoals: ["Good Health and Well-being", "Quality Education"],
   geographicFocus: ["Sub-Saharan Africa", "Southeast Asia"],
-  campaigns: [
+  sdgGoals: ["Good Health and Well-being", "Quality Education", "Reduced Inequalities"],
+  
+  // Team & Leadership
+  teamSize: "25-50",
+  keyPersonnel: [
     {
-      id: "1",
-      name: "Clean Water Initiative",
-      status: "active",
-      startDate: "2024-01-15",
-      endDate: "2024-12-31",
-      target: 50000,
-      raised: 37500,
-      beneficiaries: 2500,
-      location: "Kenya",
-      description: "Providing clean water access to rural communities through well construction and water purification systems."
-    },
-    {
-      id: "2",
-      name: "Education for All",
-      status: "completed",
-      startDate: "2023-06-01",
-      endDate: "2024-05-31",
-      target: 25000,
-      raised: 25000,
-      beneficiaries: 500,
-      location: "Uganda",
-      description: "Building schools and training teachers in underserved communities."
-    },
-    {
-      id: "3",
-      name: "Healthcare Access Program",
-      status: "planning",
-      startDate: "2024-03-01",
-      endDate: "2025-02-28",
-      target: 75000,
-      raised: 0,
-      beneficiaries: 5000,
-      location: "Tanzania",
-      description: "Establishing mobile health clinics and training community health workers."
+      name: "Dr. Sarah Kimani",
+      role: "Executive Director",
+      experience: "15 years in public health",
+      bio: "Dr. Kimani has dedicated her career to improving healthcare access in rural communities across Africa."
     }
   ],
+  
+  // Impact & Metrics
+  beneficiariesServed: "50,000+",
+  yearsActive: 8,
+  completedProjects: 15,
   impactMetrics: {
-    totalBeneficiaries: "50000",
-    partnersWorkedWith: "25",
-    description: "We have reached over 50,000 individuals through our health programs, established 15 community health centers, and trained 200+ local healthcare workers.",
-    keyAchievements: [
-      "Reduced child mortality by 35% in target communities",
-      "Improved access to clean water for 25,000 people", 
-      "Trained over 500 community health workers",
-      "Built 30+ sustainable health and education facilities"
-    ]
+    livesTransformed: "50,000+",
+    healthWorkersTrained: 200,
+    clinicsEstablished: 15,
+    vaccinesAdministered: 8500,
+    maternalHealthServices: 2500
   },
-  fundingNeeds: {
-    annualBudget: "500000-1000000",
-    projectBudget: "50000-250000",
-    description: "Seeking funding for community health center expansion and mobile health unit programs."
+  
+  // Success Stories
+  successStories: [
+    {
+      title: "Saving Lives in Rural Kenya",
+      description: "Our mobile health clinic program has reduced child mortality by 40% in remote villages.",
+      impact: "5,000 children vaccinated",
+      image: "🏥"
+    },
+    {
+      title: "Training Community Heroes",
+      description: "We've trained 200 community health workers who now serve as the first line of healthcare.",
+      impact: "200 health workers trained",
+      image: "👩‍⚕️"
+    },
+    {
+      title: "Maternal Health Revolution",
+      description: "Our maternal health program has reduced maternal mortality by 60% in target communities.",
+      impact: "2,500 safe deliveries",
+      image: "👶"
+    }
+  ],
+  
+  // Funding Information
+  fundingNeeds: "We seek funding for mobile health clinics, health worker training, and community health education programs.",
+  annualBudget: "$450,000",
+  fundingRange: "$50,000 - $250,000",
+  
+
+  
+  // Social Media & Online Presence
+  socialMedia: {
+    linkedin: "",
+    twitter: "",
+    facebook: ""
   }
 };
 
 const sectors = [
   "Health", "Education", "Environment", "Human Rights", "Economic Development",
-  "Agriculture", "Water & Sanitation", "Gender Equality", "Disaster Relief", "Technology"
-];
-
-const sdgGoals = [
-  "No Poverty", "Zero Hunger", "Good Health and Well-being", "Quality Education",
-  "Gender Equality", "Clean Water and Sanitation", "Affordable and Clean Energy",
-  "Decent Work and Economic Growth", "Industry, Innovation and Infrastructure",
-  "Reduced Inequalities", "Sustainable Cities and Communities", "Responsible Consumption and Production",
-  "Climate Action", "Life Below Water", "Life on Land", "Peace, Justice and Strong Institutions",
-  "Partnerships for the Goals"
+  "Agriculture", "Water & Sanitation", "Gender Equality", "Technology", "Climate"
 ];
 
 const regions = [
@@ -97,7 +104,21 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(mockProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("basic");
+  const { locale } = useLanguage();
+  const translate = t(locale);
+
+  // Load profile from localStorage on component mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('ngo_profile');
+    if (savedProfile) {
+      try {
+        const parsedProfile = JSON.parse(savedProfile);
+        setProfile(parsedProfile);
+      } catch (error) {
+        console.error('Failed to load saved profile:', error);
+      }
+    }
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -107,22 +128,40 @@ export default function ProfilePage() {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNestedChange = (parent: string, field: string, value: string | string[]) => {
-    setProfile(prev => ({
-      ...prev,
-      [parent]: { ...prev[parent as keyof typeof prev] as any, [field]: value }
-    }));
-  };
-
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual save logic
       console.log("Saving profile:", profile);
+      
+      // Simulate API call - in real app, this would save to backend
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Save to localStorage for persistence in MVP
+      localStorage.setItem('ngo_profile', JSON.stringify(profile));
+      
+      // Show success message
+      const successMessage = document.createElement('div');
+      successMessage.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+      successMessage.textContent = 'Profile saved successfully!';
+      document.body.appendChild(successMessage);
+      
+      setTimeout(() => {
+        document.body.removeChild(successMessage);
+      }, 3000);
+      
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to save profile:", error);
+      
+      // Show error message
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
+      errorMessage.textContent = 'Failed to save profile. Please try again.';
+      document.body.appendChild(errorMessage);
+      
+      setTimeout(() => {
+        document.body.removeChild(errorMessage);
+      }, 3000);
     } finally {
       setIsLoading(false);
     }
@@ -130,464 +169,407 @@ export default function ProfilePage() {
 
   const calculateCompleteness = () => {
     let completed = 0;
-    let total = 8;
+    let total = 11;
     
+    // Basic Information (3 fields)
     if (profile.organizationName) completed++;
+    if (profile.email) completed++;
+    if (profile.phone) completed++;
+    if (profile.website) completed++;
+    
+    // Mission & Story (3 fields)
     if (profile.mission) completed++;
-    if (profile.description) completed++;
+    if (profile.impactStory) completed++;
     if (profile.sectors.length > 0) completed++;
-    if (profile.sdgGoals.length > 0) completed++;
     if (profile.geographicFocus.length > 0) completed++;
-    if (profile.impactMetrics.totalBeneficiaries) completed++;
-    if (profile.fundingNeeds.description) completed++;
+    
+    // Funding & Team (3 fields)
+    if (profile.fundingNeeds) completed++;
+    if (profile.annualBudget) completed++;
+    if (profile.teamSize) completed++;
     
     return Math.round((completed / total) * 100);
   };
 
-  const tabs = [
-    { id: "basic", name: "Basic Info", icon: "📋" },
-    { id: "mission", name: "Mission & Focus", icon: "🎯" },
-    { id: "campaigns", name: "Campaigns", icon: "🚀" },
-    { id: "impact", name: "Impact & Metrics", icon: "📊" },
-    { id: "funding", name: "Funding Needs", icon: "💰" },
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Organization Profile</h1>
-          <p className="text-gray-600">Manage your organization's information and visibility</p>
+    <ClientOnly fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="text-right">
-            <p className="text-sm text-gray-600">Profile Completeness</p>
-            <div className="flex items-center space-x-2">
-              <div className="w-24 bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${calculateCompleteness()}%` }}
-                />
+      </div>
+    }>
+      <div className="space-y-8">
+        {/* Hero Section */}
+        <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl overflow-hidden">
+          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="relative px-8 py-12 text-white">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <span className="text-2xl">🌍</span>
+                  </div>
+                  <div>
+                    <h1 className="text-3xl lg:text-4xl font-bold">{profile.organizationName}</h1>
+                    <p className="text-blue-100">{profile.organizationType} • Est. {profile.establishedYear}</p>
+                  </div>
+                </div>
+                <p className="text-lg text-blue-50 mb-6 max-w-2xl leading-relaxed">
+                  {profile.impactStory}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {profile.sectors.map((sector, idx) => (
+                    <span key={idx} className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                      {sector}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <span className="text-sm font-medium text-gray-900">{calculateCompleteness()}%</span>
+              
+              <div className="mt-8 lg:mt-0 lg:ml-8">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center">
+                  <div className="text-3xl font-bold mb-1">{calculateCompleteness()}%</div>
+                  <div className="text-sm text-blue-100 mb-3">Profile Complete</div>
+                  <div className="w-24 bg-white/20 rounded-full h-2 mx-auto mb-4">
+                    <div 
+                      className="bg-white h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${calculateCompleteness()}%` }}
+                    />
+                  </div>
+                  {!isEditing ? (
+                    <Button 
+                      onClick={() => setIsEditing(true)}
+                      variant="secondary"
+                      className="bg-white text-blue-600 hover:bg-blue-50"
+                    >
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <div className="flex flex-col space-y-2">
+                      <Button 
+                        onClick={handleSave} 
+                        disabled={isLoading}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {isLoading ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                        className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)}>
-              Edit Profile
-            </Button>
-          ) : (
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Tab navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                activeTab === tab.id
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.name}</span>
-            </button>
+        {/* Impact Metrics */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {Object.entries(profile.impactMetrics).map(([key, value], idx) => (
+            <Card key={key} className="text-center hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="text-2xl lg:text-3xl font-bold text-blue-600 mb-2">{value}</div>
+                <div className="text-sm text-gray-600 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </nav>
-      </div>
+        </div>
 
-      {/* Tab content */}
-      <div className="space-y-6">
-        {activeTab === "basic" && (
-          <Card>
+        {/* Success Stories */}
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
+            <CardTitle className="flex items-center space-x-2">
+              <span className="text-2xl">🌟</span>
+              <span>Our Impact Stories</span>
+            </CardTitle>
+            <CardDescription>
+              Real stories of transformation and hope from our work
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x">
+              {profile.successStories.map((story, idx) => (
+                <div key={idx} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="text-4xl mb-4">{story.image}</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{story.title}</h3>
+                  <p className="text-gray-600 mb-4 leading-relaxed">{story.description}</p>
+                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                    {story.impact}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Mission & Story */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          <Card className="h-fit">
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>
-                Essential details about your organization
-              </CardDescription>
+              <CardTitle className="flex items-center space-x-2">
+                <span className="text-2xl">🎯</span>
+                <span>Our Mission</span>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mission">Mission Statement *</Label>
+                <Textarea
+                  id="mission"
+                  rows={4}
+                  value={profile.mission}
+                  onChange={(e) => handleInputChange("mission", e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Describe your organization's mission and primary activities..."
+                  className="resize-none"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="impactStory">Impact Story</Label>
+                <Textarea
+                  id="impactStory"
+                  rows={4}
+                  value={profile.impactStory}
+                  onChange={(e) => handleInputChange("impactStory", e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Tell your organization's story and impact..."
+                  className="resize-none"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span className="text-2xl">📞</span>
+                <span>Contact Information</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="organizationName">Organization Name *</Label>
-                  <Input
-                    id="organizationName"
-                    value={profile.organizationName}
-                    onChange={(e) => handleInputChange("organizationName", e.target.value)}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Contact Email *</Label>
+                  <Label htmlFor="email">Email Address *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={profile.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     disabled={!isEditing}
+                    className="bg-gray-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={profile.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={profile.website}
+                    onChange={(e) => handleInputChange("website", e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="www.yourorganization.org"
                   />
                 </div>
               </div>
-              
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Focus Areas & Geography */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span className="text-2xl">🌐</span>
+              <span>Our Focus & Reach</span>
+            </CardTitle>
+            <CardDescription>
+              Define your areas of expertise and geographic impact
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Primary Sectors *</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {sectors.map((sector) => (
+                  <label key={sector} className={`flex items-center space-x-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    profile.sectors.includes(sector) 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={profile.sectors.includes(sector)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArrayChange("sectors", [...profile.sectors, sector]);
+                        } else {
+                          handleArrayChange("sectors", profile.sectors.filter(s => s !== sector));
+                        }
+                      }}
+                      disabled={!isEditing}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">{sector}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Geographic Focus *</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {regions.map((region) => (
+                  <label key={region} className={`flex items-center space-x-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                    profile.geographicFocus.includes(region) 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={profile.geographicFocus.includes(region)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArrayChange("geographicFocus", [...profile.geographicFocus, region]);
+                        } else {
+                          handleArrayChange("geographicFocus", profile.geographicFocus.filter(r => r !== region));
+                        }
+                      }}
+                      disabled={!isEditing}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="text-sm font-medium">📍 {region}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Funding & Financial Information */}
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span className="text-2xl">💰</span>
+              <span>Funding & Financial Information</span>
+            </CardTitle>
+            <CardDescription>
+              Help funders understand your financial needs and organizational capacity
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fundingNeeds" className="text-base font-semibold">Current Funding Needs *</Label>
+              <Textarea
+                id="fundingNeeds"
+                rows={4}
+                value={profile.fundingNeeds}
+                onChange={(e) => handleInputChange("fundingNeeds", e.target.value)}
+                disabled={!isEditing}
+                placeholder="Describe your current funding needs, project types, and funding amounts you're seeking..."
+                className="resize-none bg-white"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="userType">Organization Type</Label>
-                <Select value={profile.userType} disabled>
-                  <SelectTrigger>
-                    <SelectValue />
+                <Label htmlFor="annualBudget">Annual Budget</Label>
+                <Input
+                  id="annualBudget"
+                  value={profile.annualBudget}
+                  onChange={(e) => handleInputChange("annualBudget", e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="$500,000"
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fundingRange">Typical Funding Range</Label>
+                <Input
+                  id="fundingRange"
+                  value={profile.fundingRange}
+                  onChange={(e) => handleInputChange("fundingRange", e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="$10,000 - $100,000"
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="teamSize">Team Size</Label>
+                <Select 
+                  value={profile.teamSize} 
+                  onValueChange={(value) => handleInputChange("teamSize", value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Select team size" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ngo">NGO / Non-Profit Organization</SelectItem>
-                    <SelectItem value="funder">Funder / Foundation</SelectItem>
-                    <SelectItem value="consultant">Consultant</SelectItem>
+                    <SelectItem value="1-5">1-5 people</SelectItem>
+                    <SelectItem value="6-15">6-15 people</SelectItem>
+                    <SelectItem value="16-25">16-25 people</SelectItem>
+                    <SelectItem value="25-50">25-50 people</SelectItem>
+                    <SelectItem value="50+">50+ people</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500">Contact support to change organization type</p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {activeTab === "mission" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Mission & Description</CardTitle>
-                <CardDescription>
-                  Tell funders about your organization's purpose and work
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="mission">Mission Statement *</Label>
-                  <Textarea
-                    id="mission"
-                    rows={3}
-                    value={profile.mission}
-                    onChange={(e) => handleInputChange("mission", e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="Describe your organization's mission and core purpose..."
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">Detailed Description</Label>
-                  <Textarea
-                    id="description"
-                    rows={4}
-                    value={profile.description}
-                    onChange={(e) => handleInputChange("description", e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="Provide more details about your work, programs, and approach..."
-                  />
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Focus Areas</CardTitle>
-                <CardDescription>
-                  Select the sectors and SDG goals that align with your work
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Sectors *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {sectors.map((sector) => (
-                      <label key={sector} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={profile.sectors.includes(sector)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              handleArrayChange("sectors", [...profile.sectors, sector]);
-                            } else {
-                              handleArrayChange("sectors", profile.sectors.filter(s => s !== sector));
-                            }
-                          }}
-                          disabled={!isEditing}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm">{sector}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label>SDG Goals</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                    {sdgGoals.map((goal) => (
-                      <label key={goal} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={profile.sdgGoals.includes(goal)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              handleArrayChange("sdgGoals", [...profile.sdgGoals, goal]);
-                            } else {
-                              handleArrayChange("sdgGoals", profile.sdgGoals.filter(g => g !== goal));
-                            }
-                          }}
-                          disabled={!isEditing}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm">{goal}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Geographic Focus *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {regions.map((region) => (
-                      <label key={region} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={profile.geographicFocus.includes(region)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              handleArrayChange("geographicFocus", [...profile.geographicFocus, region]);
-                            } else {
-                              handleArrayChange("geographicFocus", profile.geographicFocus.filter(r => r !== region));
-                            }
-                          }}
-                          disabled={!isEditing}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm">{region}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === "campaigns" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Past & Current Campaigns</CardTitle>
-                    <CardDescription>
-                      Showcase your fundraising campaigns and their impact
-                    </CardDescription>
-                  </div>
-                  {isEditing && (
-                    <Button size="sm">
-                      Add Campaign
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {profile.campaigns.map((campaign) => (
-                  <div key={campaign.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{campaign.name}</h4>
-                        <p className="text-sm text-gray-600">{campaign.location}</p>
-                        <p className="text-sm text-gray-700 mt-2">{campaign.description}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        campaign.status === 'active' ? 'bg-green-100 text-green-800' :
-                        campaign.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {campaign.status}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                      <div className="text-sm">
-                        <span className="font-medium">Duration:</span> {campaign.startDate} to {campaign.endDate}
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">Beneficiaries:</span> {campaign.beneficiaries.toLocaleString()}
-                      </div>
-                    </div>
-                    
-                    {campaign.status !== 'planning' && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Funding Progress</span>
-                          <span>{Math.round((campaign.raised / campaign.target) * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${Math.min((campaign.raised / campaign.target) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-600">
-                          <span>${campaign.raised.toLocaleString()} raised</span>
-                          <span>${campaign.target.toLocaleString()} goal</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === "impact" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Impact Metrics</CardTitle>
-              <CardDescription>
-                Share your organization's impact and achievements
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="totalBeneficiaries">Total Beneficiaries Served</Label>
-                  <Input
-                    id="totalBeneficiaries"
-                    type="number"
-                    value={profile.impactMetrics.totalBeneficiaries}
-                    onChange={(e) => handleNestedChange("impactMetrics", "totalBeneficiaries", e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="e.g., 50000"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="partnersWorkedWith">Partners Worked With</Label>
-                  <Input
-                    id="partnersWorkedWith"
-                    type="number"
-                    value={profile.impactMetrics.partnersWorkedWith}
-                    onChange={(e) => handleNestedChange("impactMetrics", "partnersWorkedWith", e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="e.g., 25"
-                  />
-                </div>
+        {/* Call to Action */}
+        <Card className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white border-0">
+          <CardContent className="p-8 text-center">
+            <div className="max-w-2xl mx-auto">
+              <div className="text-4xl mb-4">🚀</div>
+              <h3 className="text-2xl font-bold mb-4">Ready to Find Your Perfect Funders?</h3>
+              <p className="text-blue-100 mb-6 leading-relaxed">
+                Your compelling profile story is now ready to attract the right funders. 
+                Use our AI-powered semantic search to discover funding opportunities that align with your mission.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  asChild
+                  size="lg"
+                  className="bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  <a href="/dashboard/search">🔍 Start Searching for Funders</a>
+                </Button>
+                <Button 
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="border-white/30 text-white hover:bg-white/10"
+                >
+                  <a href="/dashboard">← Back to Dashboard</a>
+                </Button>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="impactDescription">Impact Description</Label>
-                <Textarea
-                  id="impactDescription"
-                  rows={4}
-                  value={profile.impactMetrics.description}
-                  onChange={(e) => handleNestedChange("impactMetrics", "description", e.target.value)}
-                  disabled={!isEditing}
-                  placeholder="Describe your key achievements, impact metrics, and success stories..."
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Key Achievements</Label>
-                <div className="space-y-2">
-                  {profile.impactMetrics.keyAchievements.map((achievement, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <span className="text-green-500">✓</span>
-                      <span className="text-sm text-gray-700">{achievement}</span>
-                    </div>
-                  ))}
-                </div>
-                {isEditing && (
-                  <Button size="sm" variant="outline">
-                    Add Achievement
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "funding" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Funding Needs</CardTitle>
-              <CardDescription>
-                Help funders understand your funding requirements
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="annualBudget">Annual Budget Range</Label>
-                  <Select 
-                    value={profile.fundingNeeds.annualBudget}
-                    onValueChange={(value) => handleNestedChange("fundingNeeds", "annualBudget", value)}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select budget range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="under-50000">Under $50,000</SelectItem>
-                      <SelectItem value="50000-100000">$50,000 - $100,000</SelectItem>
-                      <SelectItem value="100000-250000">$100,000 - $250,000</SelectItem>
-                      <SelectItem value="250000-500000">$250,000 - $500,000</SelectItem>
-                      <SelectItem value="500000-1000000">$500,000 - $1,000,000</SelectItem>
-                      <SelectItem value="1000000-5000000">$1,000,000 - $5,000,000</SelectItem>
-                      <SelectItem value="over-5000000">Over $5,000,000</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="projectBudget">Typical Project Budget</Label>
-                  <Select 
-                    value={profile.fundingNeeds.projectBudget}
-                    onValueChange={(value) => handleNestedChange("fundingNeeds", "projectBudget", value)}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select project budget" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="under-10000">Under $10,000</SelectItem>
-                      <SelectItem value="10000-25000">$10,000 - $25,000</SelectItem>
-                      <SelectItem value="25000-50000">$25,000 - $50,000</SelectItem>
-                      <SelectItem value="50000-100000">$50,000 - $100,000</SelectItem>
-                      <SelectItem value="100000-250000">$100,000 - $250,000</SelectItem>
-                      <SelectItem value="250000-500000">$250,000 - $500,000</SelectItem>
-                      <SelectItem value="over-500000">Over $500,000</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fundingDescription">Funding Needs Description</Label>
-                <Textarea
-                  id="fundingDescription"
-                  rows={4}
-                  value={profile.fundingNeeds.description}
-                  onChange={(e) => handleNestedChange("fundingNeeds", "description", e.target.value)}
-                  disabled={!isEditing}
-                  placeholder="Describe what you're seeking funding for, specific projects, or ongoing needs..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </ClientOnly>
   );
 }

@@ -1,653 +1,611 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ClientOnly from "@/components/ClientOnly";
 
-// Mock NGO data for Funders to search
-const mockNGOResults = [
+interface Funder {
+  id: string;
+  name: string;
+  description: string;
+  focusAreas: string[];
+  grantRange: string;
+  location: string;
+  totalGranted: string;
+  activeGrants: number;
+  logo: string;
+  website: string;
+  applicationProcess: string;
+  requirements: string[];
+  recentGrants: string[];
+}
+
+interface FunderWithMatch extends Funder {
+  matchScore: number;
+  matchReasons: string[];
+}
+
+// Enhanced mock funder data with match explanations
+const mockFunders: Funder[] = [
   {
     id: "1",
-    name: "Global Health Initiative",
-    type: "International NGO",
-    location: "Kenya, Uganda, Tanzania",
-    description: "Improving healthcare access in rural communities through mobile clinics and community health worker training programs.",
-    sectors: ["Health", "Community Development"],
-    fundingNeeds: "$50,000 - $250,000",
-    impactScore: 9.2,
-    beneficiaries: 12500,
-    yearsActive: 8,
-    website: "globalhealthinitiative.org",
-    currentCampaigns: 3,
-    completedProjects: 15,
-    impactMetrics: {
-      livesImproved: 12500,
-      healthWorkersTrained: 200,
-      clinicsEstablished: 15
-    },
-    fundingHistory: [
-      { funder: "Gates Foundation", amount: 180000, year: 2023 },
-      { funder: "WHO", amount: 95000, year: 2022 }
-    ],
-    sdgGoals: ["Good Health and Well-being", "Reduced Inequalities"],
-    organizationSize: "medium",
-    stage: "growth",
-    lastActive: "2 days ago"
+    name: "Impact Foundation",
+    description: "Supporting innovative solutions for global health and education challenges through technology and community partnerships.",
+    focusAreas: ["Health", "Education", "Innovation", "Technology"],
+    grantRange: "$50K - $250K",
+    location: "United States",
+    totalGranted: "$2.5M",
+    activeGrants: 12,
+    logo: "🏥",
+    website: "www.impactfoundation.org",
+    applicationProcess: "Rolling applications",
+    requirements: ["501(c)(3) status", "Detailed impact metrics", "Technology component"],
+    recentGrants: ["Mobile health clinics in Kenya", "Educational apps for rural schools", "Telemedicine platforms"]
   },
   {
     id: "2",
-    name: "Education for All Alliance",
-    type: "Local NGO",
-    location: "Bangladesh, Nepal",
-    description: "Providing quality education and digital literacy programs to underserved children in South Asia.",
-    sectors: ["Education", "Technology"],
-    fundingNeeds: "$25,000 - $100,000",
-    impactScore: 8.7,
-    beneficiaries: 3200,
-    yearsActive: 5,
-    website: "educationforall.org",
-    currentCampaigns: 2,
-    completedProjects: 8,
-    impactMetrics: {
-      studentsEducated: 3200,
-      teachersTrained: 45,
-      schoolsBuilt: 8
-    },
-    fundingHistory: [
-      { funder: "UNICEF", amount: 75000, year: 2023 },
-      { funder: "Local Foundation", amount: 25000, year: 2022 }
-    ],
-    sdgGoals: ["Quality Education", "Gender Equality"],
-    organizationSize: "small",
-    stage: "expansion",
-    lastActive: "1 day ago"
+    name: "Green Future Fund",
+    description: "Accelerating climate solutions and environmental sustainability projects worldwide, with focus on renewable energy and conservation.",
+    focusAreas: ["Environment", "Climate", "Sustainability", "Renewable Energy"],
+    grantRange: "$25K - $100K",
+    location: "Europe",
+    totalGranted: "$1.8M",
+    activeGrants: 8,
+    logo: "🌱",
+    website: "www.greenfuturefund.org",
+    applicationProcess: "Quarterly deadlines",
+    requirements: ["Environmental impact focus", "Measurable outcomes", "Local partnerships"],
+    recentGrants: ["Solar power for rural communities", "Forest restoration projects", "Clean water initiatives"]
   },
   {
     id: "3",
-    name: "Clean Water Foundation",
-    type: "International NGO",
-    location: "Sub-Saharan Africa",
-    description: "Building sustainable water infrastructure and sanitation systems in rural African communities.",
-    sectors: ["Water & Sanitation", "Infrastructure"],
-    fundingNeeds: "$100,000 - $500,000",
-    impactScore: 9.5,
-    beneficiaries: 25000,
-    yearsActive: 12,
-    website: "cleanwaterfoundation.org",
-    currentCampaigns: 4,
-    completedProjects: 32,
-    impactMetrics: {
-      peopleWithCleanWater: 25000,
-      wellsBuilt: 45,
-      sanitationFacilities: 120
-    },
-    fundingHistory: [
-      { funder: "World Bank", amount: 320000, year: 2023 },
-      { funder: "Water.org", amount: 150000, year: 2022 }
-    ],
-    sdgGoals: ["Clean Water and Sanitation", "Good Health and Well-being"],
-    organizationSize: "large",
-    stage: "mature",
-    lastActive: "3 hours ago"
+    name: "Education Alliance",
+    description: "Empowering communities through education and youth development programs, especially in underserved areas.",
+    focusAreas: ["Education", "Youth Development", "Community", "Literacy"],
+    grantRange: "$10K - $75K",
+    location: "Global",
+    totalGranted: "$950K",
+    activeGrants: 15,
+    logo: "📚",
+    website: "www.educationalliance.org",
+    applicationProcess: "Open applications",
+    requirements: ["Education focus", "Community engagement", "Progress reporting"],
+    recentGrants: ["Adult literacy programs", "STEM education for girls", "Teacher training initiatives"]
   },
   {
     id: "4",
-    name: "Youth Empowerment Network",
-    type: "Community Organization",
-    location: "Brazil, Colombia",
-    description: "Empowering young people through skills training, entrepreneurship programs, and leadership development.",
-    sectors: ["Youth Development", "Economic Development"],
-    fundingNeeds: "$15,000 - $75,000",
-    impactScore: 8.1,
-    beneficiaries: 850,
-    yearsActive: 3,
-    website: "youthempowerment.org",
-    currentCampaigns: 1,
-    completedProjects: 4,
-    impactMetrics: {
-      youthTrained: 850,
-      jobsCreated: 120,
-      businessesStarted: 35
-    },
-    fundingHistory: [
-      { funder: "Inter-American Foundation", amount: 45000, year: 2023 }
-    ],
-    sdgGoals: ["Decent Work and Economic Growth", "Reduced Inequalities"],
-    organizationSize: "small",
-    stage: "startup",
-    lastActive: "5 hours ago"
+    name: "Community Health Partners",
+    description: "Supporting grassroots health initiatives in underserved communities across Sub-Saharan Africa.",
+    focusAreas: ["Health", "Community", "Access", "Maternal Health"],
+    grantRange: "$15K - $60K",
+    location: "Sub-Saharan Africa",
+    totalGranted: "$1.2M",
+    activeGrants: 20,
+    logo: "🏥",
+    website: "www.communityhealthpartners.org",
+    applicationProcess: "Rolling applications",
+    requirements: ["Community-based", "Health focus", "Local leadership"],
+    recentGrants: ["Maternal health clinics", "Vaccination campaigns", "Health worker training"]
   },
   {
     id: "5",
-    name: "Climate Action Collective",
-    type: "Environmental NGO",
-    location: "Global",
-    description: "Implementing climate adaptation and mitigation projects while building community resilience to climate change.",
-    sectors: ["Climate Change", "Environment"],
-    fundingNeeds: "$75,000 - $300,000",
-    impactScore: 9.0,
-    beneficiaries: 8500,
-    yearsActive: 6,
-    website: "climateactioncollective.org",
-    currentCampaigns: 3,
-    completedProjects: 12,
-    impactMetrics: {
-      co2Reduced: 5500,
-      treesPlanted: 15000,
-      communitiesReached: 25
-    },
-    fundingHistory: [
-      { funder: "Green Climate Fund", amount: 200000, year: 2023 },
-      { funder: "Climate Foundation", amount: 85000, year: 2022 }
-    ],
-    sdgGoals: ["Climate Action", "Life on Land"],
-    organizationSize: "medium",
-    stage: "growth",
-    lastActive: "1 day ago"
+    name: "Tech for Good Initiative",
+    description: "Funding technology solutions that address social and humanitarian challenges in developing countries.",
+    focusAreas: ["Technology", "Innovation", "Social Impact", "Digital Health"],
+    grantRange: "$75K - $500K",
+    location: "North America",
+    totalGranted: "$4.2M",
+    activeGrants: 6,
+    logo: "💻",
+    website: "www.techforgood.org",
+    applicationProcess: "Bi-annual cycles",
+    requirements: ["Technology component", "Scalability plan", "User research"],
+    recentGrants: ["Digital health platforms", "Educational technology", "Financial inclusion apps"]
   }
 ];
 
-const sectors = [
-  "Health", "Education", "Environment", "Climate Change", "Human Rights", 
-  "Economic Development", "Agriculture", "Water & Sanitation", "Gender Equality", 
-  "Youth Development", "Community Development", "Technology", "Infrastructure"
-];
+// Function to calculate match score and explanation based on search query
+const calculateMatch = (funder: Funder, query: string, filters: { focusArea: string; location: string }) => {
+  let score = 0;
+  let reasons = [];
 
-const regions = [
-  "Global", "Sub-Saharan Africa", "South Asia", "Southeast Asia", "East Asia",
-  "Latin America", "Middle East & North Africa", "Europe", "North America", "Oceania"
-];
+  // Semantic matching simulation (in real app, this would use AI)
+  const queryLower = query.toLowerCase();
+  const funderText = (funder.description + " " + funder.focusAreas.join(" ")).toLowerCase();
 
-const fundingRanges = [
-  "Under $25,000", "$25,000 - $50,000", "$50,000 - $100,000", "$100,000 - $250,000",
-  "$250,000 - $500,000", "$500,000 - $1,000,000", "Over $1,000,000"
-];
+  // Direct keyword matches
+  const keywords = queryLower.split(" ").filter(word => word.length > 2);
+  const keywordMatches = keywords.filter(keyword => funderText.includes(keyword));
+  if (keywordMatches.length > 0) {
+    score += keywordMatches.length * 15;
+    reasons.push(`Keywords: ${keywordMatches.join(", ")}`);
+  }
 
-const organizationSizes = [
-  { value: "startup", label: "Startup (0-2 years)" },
-  { value: "small", label: "Small (3-5 years)" },
-  { value: "medium", label: "Medium (6-10 years)" },
-  { value: "large", label: "Large (10+ years)" }
-];
+  // Focus area alignment
+  const focusMatches = funder.focusAreas.filter(area => 
+    queryLower.includes(area.toLowerCase()) || 
+    area.toLowerCase().includes(queryLower.split(" ")[0])
+  );
+  if (focusMatches.length > 0) {
+    score += focusMatches.length * 20;
+    reasons.push(`Focus areas: ${focusMatches.join(", ")}`);
+  }
 
-const impactStages = [
-  { value: "startup", label: "Early Stage" },
-  { value: "growth", label: "Growth Stage" },
-  { value: "expansion", label: "Expansion Stage" },
-  { value: "mature", label: "Mature/Established" }
-];
+  // Semantic similarity simulation
+  const semanticKeywords = {
+    "health": ["medical", "healthcare", "wellness", "clinic", "hospital", "treatment", "maternal", "vaccination"],
+    "education": ["learning", "school", "teaching", "literacy", "training", "academic", "stem"],
+    "environment": ["climate", "green", "sustainability", "conservation", "renewable", "forest", "solar"],
+    "technology": ["digital", "innovation", "tech", "mobile", "app", "platform", "telemedicine"],
+    "community": ["grassroots", "local", "rural", "underserved", "village", "developing"]
+  };
 
-const sdgGoals = [
-  "No Poverty", "Zero Hunger", "Good Health and Well-being", "Quality Education",
-  "Gender Equality", "Clean Water and Sanitation", "Affordable and Clean Energy",
-  "Decent Work and Economic Growth", "Climate Action", "Reduced Inequalities"
+  for (const [concept, synonyms] of Object.entries(semanticKeywords)) {
+    if (synonyms.some(syn => queryLower.includes(syn)) && 
+        funder.focusAreas.some(area => area.toLowerCase().includes(concept))) {
+      score += 25;
+      reasons.push(`Semantic match: ${concept}`);
+    }
+  }
+
+  // Location preference
+  if (filters.location && funder.location === filters.location) {
+    score += 15;
+    reasons.push(`Location: ${filters.location}`);
+  }
+
+  // Focus area filter
+  if (filters.focusArea && funder.focusAreas.includes(filters.focusArea)) {
+    score += 20;
+    reasons.push(`Focus area: ${filters.focusArea}`);
+  }
+
+  return {
+    score: Math.min(score, 100),
+    reasons: reasons.slice(0, 3) // Limit to top 3 reasons
+  };
+};
+
+const focusAreas = [
+  "Health", "Education", "Environment", "Technology", "Community", 
+  "Climate", "Innovation", "Youth Development", "Sustainability"
+].filter(area => area && area.trim() && area !== "");
+
+const locations = [
+  "Global", "United States", "Europe", "Sub-Saharan Africa", 
+  "Asia", "Latin America", "North America"
+].filter(location => location && location.trim() && location !== "");
+
+const searchExamples = [
+  "Mobile health clinics for maternal care in rural Kenya",
+  "STEM education programs for girls in underserved communities",
+  "Solar power solutions for off-grid villages in Africa",
+  "Digital literacy training for elderly populations",
+  "Clean water access projects in Southeast Asia"
 ];
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    sectors: [] as string[],
-    regions: [] as string[],
-    organizationSize: "",
-    fundingNeeds: "",
-    impactStage: "",
-    sdgGoals: [] as string[],
-  });
-  const [results, setResults] = useState(mockNGOResults);
-  const [isLoading, setIsLoading] = useState(false);
-  const [sortBy, setSortBy] = useState("impact");
-  const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState("grid");
-  const [savedNGOs, setSavedNGOs] = useState<string[]>([]);
+  const [selectedFocusArea, setSelectedFocusArea] = useState<string>("all");
+  const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [results, setResults] = useState<FunderWithMatch[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [feedback, setFeedback] = useState<Record<string, boolean>>({});
+
+  // Safe setters to prevent empty values
+  const safeSetFocusArea = (value: string) => {
+    setSelectedFocusArea(value || "all");
+  };
+
+  const safeSetLocation = (value: string) => {
+    setSelectedLocation(value || "all");
+  };
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSearch = async () => {
-    setIsLoading(true);
-    try {
-      console.log("Searching NGOs with:", { searchQuery, filters });
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      let filteredResults = mockNGOResults;
-      
-      if (searchQuery) {
-        filteredResults = filteredResults.filter(ngo =>
-          ngo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ngo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ngo.sectors.some(sector => sector.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-      }
-      
-      if (filters.sectors.length > 0) {
-        filteredResults = filteredResults.filter(ngo =>
-          ngo.sectors.some(sector => filters.sectors.includes(sector))
-        );
-      }
-      
-      if (filters.regions.length > 0) {
-        filteredResults = filteredResults.filter(ngo =>
-          filters.regions.some(region => ngo.location.includes(region))
-        );
-      }
-      
-      if (filters.organizationSize) {
-        filteredResults = filteredResults.filter(ngo => ngo.organizationSize === filters.organizationSize);
-      }
-      
-      if (filters.impactStage) {
-        filteredResults = filteredResults.filter(ngo => ngo.stage === filters.impactStage);
-      }
-      
-      setResults(filteredResults);
-    } catch (error) {
-      console.error("Search failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    const filters = {
+      focusArea: selectedFocusArea === "all" ? "" : selectedFocusArea,
+      location: selectedLocation === "all" ? "" : selectedLocation
+    };
+
+    // Calculate matches with explanations
+    const matchedResults = mockFunders.map(funder => {
+      const match = calculateMatch(funder, searchQuery, filters);
+      return {
+        ...funder,
+        matchScore: match.score,
+        matchReasons: match.reasons
+      };
+    })
+    .filter(funder => funder.matchScore > 20) // Only show decent matches
+    .sort((a, b) => b.matchScore - a.matchScore);
+
+    setResults(matchedResults);
+    setHasSearched(true);
+    setIsSearching(false);
   };
 
-  const handleFilterChange = (filterType: string, value: string | string[]) => {
-    setFilters(prev => ({ ...prev, [filterType]: value }));
+  const handleFeedback = (funderId: string, isGood: boolean) => {
+    setFeedback(prev => ({
+      ...prev,
+      [funderId]: isGood
+    }));
+    
+    // In real app, this would send feedback to backend for learning
+    console.log(`Feedback for ${funderId}: ${isGood ? 'Good' : 'Bad'} match`);
   };
 
-  const clearFilters = () => {
-    setFilters({
-      sectors: [],
-      regions: [],
-      organizationSize: "",
-      fundingNeeds: "",
-      impactStage: "",
-      sdgGoals: [],
-    });
+  const clearSearch = () => {
     setSearchQuery("");
-    setResults(mockNGOResults);
+    safeSetFocusArea("all");
+    safeSetLocation("all");
+    setResults([]);
+    setHasSearched(false);
+    setFeedback({});
   };
 
-  const sortResults = (results: typeof mockNGOResults, sortBy: string) => {
-    switch (sortBy) {
-      case "impact":
-        return [...results].sort((a, b) => b.impactScore - a.impactScore);
-      case "beneficiaries":
-        return [...results].sort((a, b) => b.beneficiaries - a.beneficiaries);
-      case "name":
-        return [...results].sort((a, b) => a.name.localeCompare(b.name));
-      case "recent":
-        return [...results].sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime());
-      default:
-        return results;
-    }
+  const useExample = (example: string) => {
+    setSearchQuery(example);
   };
-
-  const toggleSaveNGO = (ngoId: string) => {
-    setSavedNGOs(prev => 
-      prev.includes(ngoId) 
-        ? prev.filter(id => id !== ngoId)
-        : [...prev, ngoId]
-    );
-  };
-
-  const sortedResults = sortResults(results, sortBy);
-  const activeFiltersCount = filters.sectors.length + filters.regions.length + 
-    (filters.organizationSize ? 1 : 0) + (filters.fundingNeeds ? 1 : 0) + 
-    (filters.impactStage ? 1 : 0) + filters.sdgGoals.length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Discover NGOs</h1>
-          <p className="text-gray-600">Find high-impact organizations aligned with your investment criteria</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={viewMode === "grid" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("grid")}
-          >
-            Grid
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-          >
-            List
-          </Button>
+    <ClientOnly fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading search...</p>
+          </div>
         </div>
       </div>
-
-      {/* Search bar */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex space-x-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search NGOs by name, mission, or impact area..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-            </div>
-            <Button onClick={handleSearch} disabled={isLoading}>
-              {isLoading ? "Searching..." : "Search"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
-            </Button>
+    }>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+        
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-blue-100">
+            <span className="text-2xl">🧠</span>
+            <span className="text-sm font-medium text-blue-700">AI-Powered Semantic Search</span>
           </div>
-        </CardContent>
-      </Card>
+          <h1 className="text-4xl font-bold text-gray-900">Find Your Perfect Funders</h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Describe your project in natural language and discover aligned funders instantly
+          </p>
+        </div>
 
-      {/* Advanced Filters */}
-      {showFilters && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Investment Filters</CardTitle>
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                Clear All
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Sectors */}
-              <div className="space-y-2">
-                <Label>Focus Sectors</Label>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {sectors.map((sector) => (
-                    <label key={sector} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={filters.sectors.includes(sector)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            handleFilterChange("sectors", [...filters.sectors, sector]);
-                          } else {
-                            handleFilterChange("sectors", filters.sectors.filter(s => s !== sector));
-                          }
-                        }}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm">{sector}</span>
-                    </label>
-                  ))}
+        {/* Search Interface */}
+        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardContent className="p-8">
+            {/* Main Search Input */}
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-lg font-semibold text-gray-800">
+                  Describe your project or funding needs
+                </label>
+                <div className="relative">
+                  <textarea
+                    placeholder="e.g., 'We need funding for mobile health clinics in rural Kenya to provide maternal healthcare services and train local health workers...'"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-32 p-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all resize-none"
+                    onKeyDown={(e) => e.key === 'Enter' && e.ctrlKey && handleSearch()}
+                  />
+                  <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                    Ctrl + Enter to search
+                  </div>
                 </div>
               </div>
 
-              {/* Geographic Focus */}
-              <div className="space-y-2">
-                <Label>Geographic Focus</Label>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {regions.map((region) => (
-                    <label key={region} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={filters.regions.includes(region)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            handleFilterChange("regions", [...filters.regions, region]);
-                          } else {
-                            handleFilterChange("regions", filters.regions.filter(r => r !== region));
-                          }
-                        }}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm">{region}</span>
-                    </label>
-                  ))}
+              {/* Quick Examples - Mobile Optimized */}
+              {!hasSearched && (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-gray-600">💡 Try these examples:</p>
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+                    {searchExamples.map((example, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => useExample(example)}
+                        className="text-sm bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 px-4 py-3 rounded-lg border border-blue-200 transition-colors text-left touch-manipulation min-h-[44px] flex items-center"
+                      >
+                        {example}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Organization Maturity & Funding */}
-              <div className="space-y-4">
+              {/* Filters - Mobile Optimized */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Organization Size</Label>
-                  <Select value={filters.organizationSize} onValueChange={(value) => handleFilterChange("organizationSize", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any size" />
+                  <label className="text-sm font-medium text-gray-700">Focus Area (Optional)</label>
+                  <Select value={selectedFocusArea || "all"} onValueChange={safeSetFocusArea}>
+                    <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 touch-manipulation">
+                      <SelectValue placeholder="Any focus area" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any size</SelectItem>
-                      {organizationSizes.map((size) => (
-                        <SelectItem key={size.value} value={size.value}>{size.label}</SelectItem>
+                      <SelectItem value="all">Any focus area</SelectItem>
+                      {focusAreas.filter(area => area && area.trim()).map((area) => (
+                        <SelectItem key={area} value={area}>
+                          {area}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Funding Needs</Label>
-                  <Select value={filters.fundingNeeds} onValueChange={(value) => handleFilterChange("fundingNeeds", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any amount" />
+                  <label className="text-sm font-medium text-gray-700">Location (Optional)</label>
+                  <Select value={selectedLocation || "all"} onValueChange={safeSetLocation}>
+                    <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 touch-manipulation">
+                      <SelectValue placeholder="Any location" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any amount</SelectItem>
-                      {fundingRanges.map((range) => (
-                        <SelectItem key={range} value={range}>{range}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Impact Stage</Label>
-                  <Select value={filters.impactStage} onValueChange={(value) => handleFilterChange("impactStage", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any stage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Any stage</SelectItem>
-                      {impactStages.map((stage) => (
-                        <SelectItem key={stage.value} value={stage.value}>{stage.label}</SelectItem>
+                      <SelectItem value="all">Any location</SelectItem>
+                      {locations.filter(location => location && location.trim()).map((location) => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-            </div>
 
-            {/* SDG Goals */}
-            <div className="space-y-2">
-              <Label>SDG Goals</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                {sdgGoals.map((goal) => (
-                  <label key={goal} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={filters.sdgGoals.includes(goal)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleFilterChange("sdgGoals", [...filters.sdgGoals, goal]);
-                        } else {
-                          handleFilterChange("sdgGoals", filters.sdgGoals.filter(g => g !== goal));
-                        }
-                      }}
-                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <span className="text-xs">{goal}</span>
-                  </label>
-                ))}
+              {/* Search Button - Mobile Optimized */}
+              <div className="flex justify-center">
+                <Button 
+                  onClick={handleSearch} 
+                  disabled={!searchQuery.trim() || isSearching}
+                  size="lg"
+                  className="w-full sm:w-auto px-8 sm:px-12 py-4 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:from-blue-800 active:to-purple-800 shadow-lg touch-manipulation min-h-[48px]"
+                >
+                  {isSearching ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      AI is analyzing...
+                    </>
+                  ) : (
+                    <>
+                      🔍 Search with AI
+                    </>
+                  )}
+                </Button>
               </div>
+
+              {/* Results Summary */}
+              {hasSearched && (
+                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                  <div className="flex items-center space-x-4">
+                    <p className="text-lg font-medium text-gray-800">
+                      Found {results.length} matching funders
+                    </p>
+                    {results.length > 0 && (
+                      <div className="flex items-center space-x-1 text-sm text-green-600">
+                        <span>✨</span>
+                        <span>AI-powered matches</span>
+                      </div>
+                    )}
+                  </div>
+                  <Button variant="ghost" onClick={clearSearch} className="text-gray-600">
+                    Clear Search
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Results header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-600">
-            {results.length} NGO{results.length !== 1 ? "s" : ""} found
-          </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <Label htmlFor="sort">Sort by:</Label>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="impact">Impact Score</SelectItem>
-              <SelectItem value="beneficiaries">Beneficiaries</SelectItem>
-              <SelectItem value="name">Name A-Z</SelectItem>
-              <SelectItem value="recent">Recently Active</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+        {/* Search Results */}
+        {hasSearched && (
+          <div className="space-y-6">
+            {results.length === 0 ? (
+              <Card className="shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span className="text-3xl">🔍</span>
+                  </div>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">No matches found</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Try adjusting your search terms or removing some filters. Our AI works best with specific, descriptive language.
+                  </p>
+                  <Button variant="outline" onClick={clearSearch} size="lg">
+                    Try Different Search
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              results.map((funder) => (
+                <Card key={funder.id} className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white/95 backdrop-blur-sm">
+                  <CardContent className="p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex items-start space-x-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center text-3xl shadow-md">
+                          {funder.logo}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-2xl font-bold text-gray-900">{funder.name}</h3>
+                            <div className="flex items-center space-x-1 bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                              <span className="text-sm font-semibold">{funder.matchScore}%</span>
+                              <span className="text-xs">match</span>
+                            </div>
+                          </div>
+                          <p className="text-gray-700 text-lg mb-4 leading-relaxed">{funder.description}</p>
+                          <div className="flex items-center space-x-6 text-sm text-gray-600">
+                            <div className="flex items-center space-x-1">
+                              <span>📍</span>
+                              <span>{funder.location}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <span>💰</span>
+                              <span>{funder.grantRange}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <span>📊</span>
+                              <span>{funder.totalGranted} total granted</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-      {/* Results */}
-      <div className={viewMode === "grid" ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : "space-y-4"}>
-        {sortedResults.map((ngo) => (
-          <Card key={ngo.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
+                    {/* Match Explanation */}
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-6 border border-blue-100">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-sm">🎯</span>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-semibold text-blue-900 mb-3">Why this is a great match:</h4>
+                          <ul className="space-y-2">
+                            {funder.matchReasons.map((reason, idx) => (
+                              <li key={idx} className="flex items-center text-blue-800">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                                <span className="font-medium">{reason}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 mb-6">
+                      {/* Focus Areas */}
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-3">Focus Areas:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {funder.focusAreas.map((area, idx) => (
+                            <span key={idx} className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium">
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Recent Grants */}
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-3">Recent Grants:</h4>
+                        <ul className="space-y-2">
+                          {funder.recentGrants.slice(0, 3).map((grant, idx) => (
+                            <li key={idx} className="flex items-center text-gray-700">
+                              <span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>
+                              <span className="text-sm">{grant}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Feedback Section - Mobile Optimized */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                        <span className="text-gray-700 font-medium text-sm sm:text-base">Was this a good match?</span>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleFeedback(funder.id, true)}
+                            className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all touch-manipulation min-h-[44px] ${
+                              feedback[funder.id] === true 
+                                ? 'bg-green-100 text-green-700 border-2 border-green-300' 
+                                : 'bg-gray-100 hover:bg-green-50 active:bg-green-100 text-gray-600 hover:text-green-600 border-2 border-transparent'
+                            }`}
+                          >
+                            <span>👍</span>
+                            <span className="text-sm font-medium">Yes</span>
+                          </button>
+                          <button
+                            onClick={() => handleFeedback(funder.id, false)}
+                            className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all touch-manipulation min-h-[44px] ${
+                              feedback[funder.id] === false 
+                                ? 'bg-red-100 text-red-700 border-2 border-red-300' 
+                                : 'bg-gray-100 hover:bg-red-50 active:bg-red-100 text-gray-600 hover:text-red-600 border-2 border-transparent'
+                            }`}
+                          >
+                            <span>👎</span>
+                            <span className="text-sm font-medium">No</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <span>🌐</span>
+                        <span className="text-sm break-all sm:break-normal">{funder.website}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Search Tips */}
+        {!hasSearched && (
+          <Card className="shadow-lg border-0 bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardContent className="p-8">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">💡</span>
+                </div>
                 <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{ngo.name}</h3>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      ngo.impactScore >= 9 ? 'bg-green-100 text-green-800' :
-                      ngo.impactScore >= 8 ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      Impact: {ngo.impactScore}/10
-                    </span>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Search Tips for Better Results</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-3">Be Specific & Descriptive:</h4>
+                      <ul className="space-y-2 text-gray-700">
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">✓</span>
+                          <span>"Mobile health clinics for maternal care in rural Kenya"</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">✓</span>
+                          <span>"STEM education programs for girls in underserved communities"</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">✓</span>
+                          <span>"Solar power solutions for off-grid villages"</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-3">Include Context:</h4>
+                      <ul className="space-y-2 text-gray-700">
+                        <li className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          <span>Target population (rural, urban, youth, women)</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          <span>Geographic focus (country, region, continent)</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          <span>Project type (pilot, scale-up, research, training)</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                    <span>{ngo.type}</span>
-                    <span>•</span>
-                    <span>{ngo.location}</span>
-                    <span>•</span>
-                    <span>{ngo.yearsActive} years active</span>
-                  </div>
                 </div>
-                
-                <button
-                  onClick={() => toggleSaveNGO(ngo.id)}
-                  className={`p-2 rounded-full ${
-                    savedNGOs.includes(ngo.id) 
-                      ? 'bg-green-100 text-green-600' 
-                      : 'bg-gray-100 text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-                  </svg>
-                </button>
-              </div>
-              
-              <p className="text-gray-700 mb-4">{ngo.description}</p>
-              
-              {/* Key Metrics */}
-              <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-blue-600">{ngo.beneficiaries.toLocaleString()}</div>
-                  <div className="text-xs text-gray-600">Beneficiaries</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-green-600">{ngo.completedProjects}</div>
-                  <div className="text-xs text-gray-600">Projects</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-purple-600">{ngo.currentCampaigns}</div>
-                  <div className="text-xs text-gray-600">Active</div>
-                </div>
-              </div>
-              
-              {/* Sectors and SDGs */}
-              <div className="space-y-2 mb-4">
-                <div className="flex flex-wrap gap-2">
-                  {ngo.sectors.map((sector) => (
-                    <span key={sector} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                      {sector}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {ngo.sdgGoals.slice(0, 2).map((goal) => (
-                    <span key={goal} className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">
-                      {goal}
-                    </span>
-                  ))}
-                  {ngo.sdgGoals.length > 2 && (
-                    <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
-                      +{ngo.sdgGoals.length - 2} more
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {/* Funding Info */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Funding Needs:</span> {ngo.fundingNeeds}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Active {ngo.lastActive}
-                </div>
-              </div>
-              
-              {/* Actions */}
-              <div className="flex space-x-2">
-                <Button size="sm" className="flex-1" asChild>
-                  <Link href={`/dashboard/ngos/${ngo.id}`}>
-                    View Profile
-                  </Link>
-                </Button>
-                <Button size="sm" variant="outline">
-                  Contact
-                </Button>
-                <Button size="sm" variant="outline">
-                  Request Proposal
-                </Button>
               </div>
             </CardContent>
           </Card>
-        ))}
+        )}
+        </div>
       </div>
-
-      {/* Empty state */}
-      {results.length === 0 && !isLoading && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🔍</span>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No NGOs found</h3>
-            <p className="text-gray-600 mb-4">
-              Try adjusting your search criteria or filters to discover more organizations.
-            </p>
-            <Button onClick={clearFilters}>Clear Filters</Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Saved NGOs Summary */}
-      {savedNGOs.length > 0 && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-800">
-                  {savedNGOs.length} NGO{savedNGOs.length !== 1 ? "s" : ""} saved for review
-                </p>
-              </div>
-              <Button size="sm" variant="outline">
-                Review Saved NGOs
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    </ClientOnly>
   );
 }

@@ -7,37 +7,13 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useUser } from "@/contexts/UserContext";
 import { cn } from "@/lib/utils";
 
-// Role-specific navigation
-const getNavigationForRole = (role: string) => {
-  const baseNav = [
+// MVP navigation - focused on core features
+const getMVPNavigation = () => {
+  return [
     { name: "Dashboard", href: "/dashboard", icon: "🏠" },
+    { name: "Search Funders", href: "/dashboard/search", icon: "🔍" },
     { name: "Profile", href: "/dashboard/profile", icon: "👤" },
   ];
-
-  switch (role) {
-    case "ngo":
-      return [
-        ...baseNav,
-        { name: "Find Funders", href: "/dashboard/search", icon: "🔍" },
-        { name: "My Campaigns", href: "/dashboard/campaigns", icon: "🚀" },
-        { name: "Matches", href: "/dashboard/matches", icon: "🎯" },
-      ];
-    case "funder":
-      return [
-        ...baseNav,
-        { name: "Discover NGOs", href: "/dashboard/search", icon: "🔍" },
-        { name: "My Investments", href: "/dashboard/investments", icon: "💰" },
-      ];
-    case "consultant":
-      return [
-        ...baseNav,
-        { name: "Consultant Profile", href: "/dashboard/consultant-profile", icon: "💼" },
-        { name: "Find Opportunities", href: "/dashboard/search", icon: "🔍" },
-        { name: "Client Management", href: "/dashboard/clients", icon: "👥" },
-      ];
-    default:
-      return baseNav;
-  }
 };
 
 export default function DashboardLayout({
@@ -49,11 +25,23 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, isLoading } = useUser();
   
-  // Get navigation based on user role
-  const navigation = user ? getNavigationForRole(user.role) : [];
+  // Get MVP navigation
+  const navigation = user ? getMVPNavigation() : [];
 
-  // Show loading state while user data is being fetched
+  // Show loading state while user data is being fetched or during hydration
   if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent hydration mismatch by not rendering until user is loaded
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -122,12 +110,13 @@ export default function DashboardLayout({
                 </div>
               </div>
 
-              {/* Mobile menu button */}
+              {/* Mobile menu button - Touch optimized */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="md:hidden p-2 rounded-md hover:bg-gray-100"
+                className="md:hidden p-3 rounded-md hover:bg-gray-100 active:bg-gray-200 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Open navigation menu"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -149,9 +138,10 @@ export default function DashboardLayout({
                 <span className="text-lg font-semibold text-gray-900">Menu</span>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-2 rounded-md hover:bg-gray-100"
+                  className="p-3 rounded-md hover:bg-gray-100 active:bg-gray-200 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="Close navigation menu"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -166,10 +156,10 @@ export default function DashboardLayout({
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
                       className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                        "flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-colors touch-manipulation min-h-[48px]",
                         isActive
                           ? "bg-blue-50 text-blue-700"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100"
                       )}
                     >
                       <span className="text-lg">{item.icon}</span>

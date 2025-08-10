@@ -13,8 +13,17 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(defaultLocale);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    // Mark as hydrated to prevent SSR/client mismatch
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    // Only access localStorage and navigator after hydration
+    if (!isHydrated) return;
+
     // Load saved locale from localStorage
     const savedLocale = localStorage.getItem('heterotopia-locale');
     if (savedLocale && isValidLocale(savedLocale)) {
@@ -26,7 +35,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setLocaleState(browserLang);
       }
     }
-  }, []);
+  }, [isHydrated]);
 
   const isValidLocale = (locale: string): locale is Locale => {
     return locales.includes(locale as Locale);
@@ -34,9 +43,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);
-    localStorage.setItem('heterotopia-locale', newLocale);
-    // Update document language
-    document.documentElement.lang = newLocale;
+    // Only access localStorage and document after hydration
+    if (isHydrated) {
+      localStorage.setItem('heterotopia-locale', newLocale);
+      // Update document language
+      document.documentElement.lang = newLocale;
+    }
   };
 
   return (

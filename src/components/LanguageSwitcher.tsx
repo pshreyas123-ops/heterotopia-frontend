@@ -12,9 +12,16 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ variant = 'select', className = '' }: LanguageSwitcherProps) {
   const { locale, setLocale } = useLanguage();
 
+  // Ensure we have a valid locale before rendering
+  if (!locale || !locales.includes(locale) || locale === '') {
+    return (
+      <div className={`w-32 h-10 bg-gray-100 animate-pulse rounded ${className}`} />
+    );
+  }
+
   if (variant === 'select') {
     return (
-      <Select value={locale} onValueChange={(value: Locale) => setLocale(value)}>
+      <Select value={locale || 'en'} onValueChange={(value: Locale) => setLocale(value)}>
         <SelectTrigger className={`w-32 ${className}`}>
           <SelectValue>
             <div className="flex items-center space-x-2">

@@ -178,11 +178,11 @@ export default function NGODetailPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
         <div className="flex-1">
           <div className="flex items-center space-x-4 mb-4">
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="touch-manipulation min-h-[44px]">
               <Link href="/dashboard/search">← Back to Search</Link>
             </Button>
           </div>
@@ -221,74 +221,74 @@ export default function NGODetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
         
-        <div className="flex flex-col space-y-3 ml-8">
+        <div className="flex flex-col space-y-3 lg:ml-8 w-full lg:w-auto">
           <Button 
             onClick={() => setIsInterested(!isInterested)}
-            className={isInterested ? "bg-green-600 hover:bg-green-700" : ""}
+            className={`touch-manipulation min-h-[44px] ${isInterested ? "bg-green-600 hover:bg-green-700" : ""}`}
           >
             {isInterested ? "✓ Interested" : "Express Interest"}
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" className="touch-manipulation min-h-[44px]">
             Request Proposal
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" className="touch-manipulation min-h-[44px]">
             Schedule Call
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="touch-manipulation min-h-[44px]">
             Save for Later
           </Button>
         </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Quick stats - Mobile Optimized */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{ngo.impactMetrics.totalBeneficiaries.toLocaleString()}</div>
-            <div className="text-sm text-gray-600">Total Beneficiaries</div>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-blue-600">{ngo.impactMetrics.totalBeneficiaries.toLocaleString()}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Total Beneficiaries</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{ngo.completedProjects.length + ngo.currentCampaigns.length}</div>
-            <div className="text-sm text-gray-600">Total Projects</div>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">{ngo.completedProjects.length + ngo.currentCampaigns.length}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Total Projects</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{ngo.yearsActive}</div>
-            <div className="text-sm text-gray-600">Years Active</div>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-purple-600">{ngo.yearsActive}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Years Active</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{ngo.teamSize}</div>
-            <div className="text-sm text-gray-600">Team Members</div>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-orange-600">{ngo.teamSize}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Team Members</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">${(ngo.financials.annualBudget / 1000).toFixed(0)}K</div>
-            <div className="text-sm text-gray-600">Annual Budget</div>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-red-600">${(ngo.financials.annualBudget / 1000).toFixed(0)}K</div>
+            <div className="text-xs sm:text-sm text-gray-600">Annual Budget</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tab navigation */}
+      {/* Tab navigation - Mobile Optimized */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex space-x-2 sm:space-x-8 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+              className={`py-3 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 whitespace-nowrap touch-manipulation min-h-[44px] ${
                 activeTab === tab.id
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              <span>{tab.icon}</span>
-              <span>{tab.name}</span>
+              <span className="text-sm sm:text-base">{tab.icon}</span>
+              <span className="hidden sm:inline">{tab.name}</span>
             </button>
           ))}
         </nav>
