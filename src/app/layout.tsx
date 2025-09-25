@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { ToastProvider } from "@/components/Toast";
+import { QueryProvider } from "@/providers/QueryProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ClientOnly from "@/components/ClientOnly";
 
@@ -32,13 +33,15 @@ export default function RootLayout({
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           }>
-            <ToastProvider>
-              <LanguageProvider>
-                <UserProvider>
-                  {children}
-                </UserProvider>
-              </LanguageProvider>
-            </ToastProvider>
+            <QueryProvider>
+              <ToastProvider>
+                <LanguageProvider>
+                  <UserProvider>
+                    {children}
+                  </UserProvider>
+                </LanguageProvider>
+              </ToastProvider>
+            </QueryProvider>
           </ClientOnly>
         </ErrorBoundary>
       </body>

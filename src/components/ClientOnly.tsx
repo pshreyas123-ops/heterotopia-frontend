@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from 'react';
 
 interface ClientOnlyProps {
   children: React.ReactNode;
