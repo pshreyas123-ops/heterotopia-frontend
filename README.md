@@ -42,7 +42,7 @@ cp .env.local.example .env.local
 npm run dev
 # or
 yarn dev
-# or
+# orr
 pnpm dev
 # or
 bun dev
